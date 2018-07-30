@@ -9,7 +9,7 @@ async def hello(websocket, path):
         except websockets.ConnectionClosed:
             break
 
-start_server = websockets.serve(hello, '141.85.232.73', 7070)
+start_server = websockets.serve(hello, '127.0.0.1', 7070)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
