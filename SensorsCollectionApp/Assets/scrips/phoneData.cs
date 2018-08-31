@@ -11,13 +11,33 @@ using WebSocketSharp;
 [Serializable]
 public class SensorData
 {
-    public Vector3 accelerometer;
-    public Vector2 gps;
-    public Vector3 gyro_rot;
-    public Quaternion gyro_att;
-    public Vector2 magnetometer;
-    public Vector3 magentometer_raw;
-    public String time_stamp;
+	// -- Location
+	// longitude, latitude, altitude
+    public Vector3 location;
+    // Timestamp (in seconds since 1970) when location was last time updated
+    public double loc_tp;
+    // horizontal, veritcal accuracy 
+    public Vector2 loc_accuracy;
+
+    // -- Gyroscope
+    public Quaternion attitude;
+    public Vector3 gravity;
+    public Vector3 rotationRate;
+    public Vector3 rotationRateUnbiased;
+    public float updateInterval;
+    public Vector3 userAcceleration;
+
+    // -- Magnetometer
+	public float headingAccuracy;
+	public float magneticHeading;
+	public Vector3 rawVector;
+	public double mag_tp;
+	public float trueHeading;
+
+	// -- Acceleration
+	public Vector3 acceleration;
+
+	public double update_tp;
 }
 
 
@@ -84,7 +104,7 @@ public class phoneData : MonoBehaviour {
             yield break;
 
         // Start service before querying location
-        Input.location.Start();
+        Input.location.Start(0.1f, 0.1f);
 
         // Wait until service initializes
         int maxWait = 20;
@@ -144,48 +164,55 @@ public class phoneData : MonoBehaviour {
         aux_info.text = "Disconnected from server";
     }
 
-    SensorData GetData(Vector3 acc, Vector3 gyroRot, Quaternion gyroAtt, Vector3 comp, float mH, float tH, float lat, float lon)
-    {
-        SensorData value;
-
-        value = new SensorData();
-
-        value.accelerometer = acc;
-        value.gps = new Vector2(lat, lon);
-        value.gyro_rot = gyroRot;
-        value.gyro_att = gyroAtt;
-        value.magnetometer = new Vector2(mH, tH);
-        value.magentometer_raw = comp;
-        value.time_stamp = (System.DateTime.Now).Ticks.ToString();
-
-        return value;
-    }
-
     // Update is called once per frame
     void Update() {
 
-        Vector3 acc, gyroRot, mag_raw;
-        float latitude, longitude, mH, tH;
-        Quaternion gyroAtt;
+        SensorData s_data;
+    	s_data = new SensorData();
 
-        acc = Input.acceleration;
-        gyroRot = m_Gyro.rotationRate;
-        gyroAtt = m_Gyro.attitude;
-        latitude = Input.location.lastData.latitude;
-        longitude = Input.location.lastData.longitude;
-        mag_raw = m_Comp.rawVector;
-        mH = m_Comp.magneticHeading;
-        tH = m_Comp.trueHeading;
+    	// -- Location 
+	    s_data.location = new Vector3(
+	    	Input.location.lastData.longitude,
+	    	Input.location.lastData.latitude,
+	    	Input.location.lastData.altitude
+	    	);
+
+	    s_data.loc_tp = Input.location.lastData.timestamp;
+	    // horizontal, veritcal accuracy 
+	    s_data.loc_accuracy = new Vector2 (
+	    	Input.location.lastData.horizontalAccuracy,
+	    	Input.location.lastData.horizontalAccuracy
+	    	);
+
+	    // -- Gyroscope
+	    s_data.attitude = m_Gyro.attitude;
+	    s_data.gravity = m_Gyro.gravity;
+	    s_data.rotationRate = m_Gyro.rotationRate;
+	    s_data.rotationRateUnbiased = m_Gyro.rotationRateUnbiased;
+	    s_data.updateInterval = m_Gyro.updateInterval;
+	    s_data.userAcceleration = m_Gyro.userAcceleration;
+
+	    // -- Magnetometer
+		s_data.headingAccuracy = m_Comp.headingAccuracy;
+		s_data.magneticHeading = m_Comp.magneticHeading;
+		s_data.rawVector = m_Comp.rawVector;
+		s_data.mag_tp = m_Comp.timestamp;
+		s_data.trueHeading = m_Comp.trueHeading;
+
+		// Acceleration
+		s_data.acceleration = Input.acceleration;
+
+		s_data.update_tp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
 
         if (pressed)
         {
-            SensorData values = GetData(acc, gyroRot, gyroAtt, mag_raw, mH, tH, latitude, longitude);
-            ws.Send(JsonUtility.ToJson(values));
+            ws.Send(JsonUtility.ToJson(s_data));
         }
-        acc_info.text = "Acc: " + acc;
-        gps_info.text = "Location: " + latitude + " " + longitude + " " + Input.location.lastData.altitude;
-        gyro_info.text = "Gyro:" + gyroRot + " " + gyroAtt;
-        compass_info.text = "Compass: " + mH + " " + tH ;
+
+        acc_info.text = "Acc: " + s_data.acceleration;
+        gps_info.text = "Location: " + s_data.location;
+        gyro_info.text = "Gyro:" + s_data.rotationRateUnbiased + " " + s_data.attitude;
+        compass_info.text = "Compass: " + s_data.magneticHeading + " " + s_data.headingAccuracy;
     }
 
 }

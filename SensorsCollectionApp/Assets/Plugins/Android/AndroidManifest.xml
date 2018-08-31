@@ -24,7 +24,7 @@
             <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
         </activity>
         <provider android:name="com.yasirkula.unity.NativeCameraContentProvider"
-        	android:authorities="DanMunteanIsTheBestInTheWorld"
+        	android:authorities="Nemodrive"
   			android:exported="false"
   			android:grantUriPermissions="true" />
     </application>
