@@ -21,6 +21,7 @@ public class SensorData
 
     // -- Gyroscope
     public Quaternion attitude;
+    public Vector3 attitudeEularAngles;
     public Vector3 gravity;
     public Vector3 rotationRate;
     public Vector3 rotationRateUnbiased;
@@ -68,6 +69,7 @@ public class phoneData : MonoBehaviour {
     public Gyroscope m_Gyro;
     public Compass m_Comp;
     public WebSocket ws = null;
+
 
     // Use this for initialization
     IEnumerator Start () {
@@ -145,7 +147,7 @@ public class phoneData : MonoBehaviour {
         yield return 0;
     }
 
-
+    
     void StartOnClick()
     {
         pressed = true;
@@ -186,6 +188,7 @@ public class phoneData : MonoBehaviour {
 
 	    // -- Gyroscope
 	    s_data.attitude = m_Gyro.attitude;
+        s_data.attitudeEularAngles = s_data.attitude.eulerAngles;
 	    s_data.gravity = m_Gyro.gravity;
 	    s_data.rotationRate = m_Gyro.rotationRate;
 	    s_data.rotationRateUnbiased = m_Gyro.rotationRateUnbiased;
@@ -215,4 +218,27 @@ public class phoneData : MonoBehaviour {
         compass_info.text = "Compass: " + s_data.magneticHeading + " " + s_data.headingAccuracy;
     }
 
+    void ConvertQuaternionEular()
+    {
+        // convert from file quaternion to eular Angles
+        StreamWriter writetext = new StreamWriter(@"D:\data_collect\phone_node\attitude_1536070874.9_eular_angles");
+
+        using (var reader = new StreamReader(@"D:\data_collect\phone_node\attitude_153"))
+        {
+            Debug.Log("START PARSE");
+            while (!reader.EndOfStream)
+            {
+                var line = reader.ReadLine();
+                var values = line.Split(',');
+                Quaternion test1 = new Quaternion(float.Parse(values[0]), float.Parse(values[1]), float.Parse(values[2]), float.Parse(values[3]));
+                writetext.WriteLine(test1.eulerAngles.ToString());
+            }
+        }
+        Debug.Log("END");
+
+        writetext.Close();
+
+        Quaternion test  = new Quaternion(-0.5f , 0.5f, -0.5f, 0.5f);
+        Debug.Log(test.eulerAngles);
+    }
 }
